@@ -62,6 +62,14 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
+    
+    def ram_read(self, read_address):
+        """Accept the address to read and return the value stored there"""
+        return self.ram[read_address]
+
+    def ram_write(self, value, write_address):
+        self.ram.insert(write_address, value)
+        return self.ram[write_address]
 
     def run(self):
         """Run the CPU."""
