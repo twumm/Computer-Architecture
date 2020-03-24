@@ -6,6 +6,7 @@ import sys
 HLT = 0b00000001
 PRN = 0b01000111
 LDI = 0b10000010
+MUL = 0b10100010
 
 class CPU:
     """Main CPU class."""
@@ -36,7 +37,7 @@ class CPU:
                     continue
 
                 # val = int(line)
-                print(line)
+                # print(line)
                 programs.append(int(line, 2))
         # For now, we've just hardcoded a program:
 
@@ -49,7 +50,7 @@ class CPU:
             0b00000000,
             0b00000001, # HLT
         ]
-        print(programs)
+        # print(programs)
         for instruction in programs:
             self.ram[address] = instruction
             address += 1
@@ -112,8 +113,13 @@ class CPU:
             elif cmd == LDI:
                 self.reg[operand_a] = operand_b
                 inc_size = 3
+
+            elif cmd == MUL:
+                mul = self.reg[operand_a] * self.reg[operand_b]
+                print(mul)
+                inc_size = 2
             
             self.pc += inc_size 
 
-small_cpu = CPU()
-small_cpu.load()
+# small_cpu = CPU()
+# small_cpu.load()
