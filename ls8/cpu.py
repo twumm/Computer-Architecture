@@ -21,7 +21,23 @@ class CPU:
         """Load a program into memory."""
 
         address = 0
+        programs = []
+        try:
+            filename = sys.argv[1]
+        except:
+            print('Please add an ls8 file path')
 
+        with open(filename) as f:
+            for line in f:
+                line = line.split('#')[0]
+                line = line.strip()
+
+                if line == '':
+                    continue
+
+                # val = int(line)
+                print(line)
+                programs.append(int(line, 2))
         # For now, we've just hardcoded a program:
 
         program = [
@@ -33,8 +49,8 @@ class CPU:
             0b00000000,
             0b00000001, # HLT
         ]
-
-        for instruction in program:
+        print(programs)
+        for instruction in programs:
             self.ram[address] = instruction
             address += 1
 
@@ -98,3 +114,6 @@ class CPU:
                 inc_size = 3
             
             self.pc += inc_size 
+
+small_cpu = CPU()
+small_cpu.load()
