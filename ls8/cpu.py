@@ -7,6 +7,10 @@ HLT = 0b00000001
 PRN = 0b01000111
 LDI = 0b10000010
 MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
+
+SP = 3
 
 class CPU:
     """Main CPU class."""
@@ -17,10 +21,15 @@ class CPU:
         self.reg = [0] * 8
         self.pc = 0
         self.halted = False
+        self.reg[SP] = 0xf4
 
     def load(self):
         """Load a program into memory."""
 
+        if len(sys.argv) != 2:
+            print("Please enter: ls8.py [filename]")
+            sys.exit(1)
+        
         address = 0
         programs = []
         try:
@@ -41,15 +50,15 @@ class CPU:
                 programs.append(int(line, 2))
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010, # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111, # PRN R0
+        #     0b00000000,
+        #     0b00000001, # HLT
+        # ]
         # print(programs)
         for instruction in programs:
             self.ram[address] = instruction
@@ -118,7 +127,24 @@ class CPU:
                 mul = self.reg[operand_a] * self.reg[operand_b]
                 print(mul)
                 inc_size = 2
-            
+
+            elif cmd == PUSH:
+                reg_index = self.ram_read(self.pc + 1)
+                value = self.reg[reg_index]
+                # PUSH
+                self.reg[SP] -= 1
+                # self.ram[self.reg[SP]] = value
+                self.ram_write(value, self.reg[SP])
+                inc_size = 2
+
+            elif cmd == POP:
+                reg_index = self.ram_read(self.pc + 1)
+                value = self.ram[self.reg[SP]]
+                # POP
+                self.reg[reg_index] = value
+                self.reg[SP] += 1
+                inc_size = 2
+
             self.pc += inc_size 
 
 # small_cpu = CPU()
