@@ -2,15 +2,17 @@
 
 import sys
 
+SP = 7
+
 # operation codes
 HLT = 0b00000001
 PRN = 0b01000111
 LDI = 0b10000010
+ADD = 0b10100000
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
 
-SP = 3
 
 class CPU:
     """Main CPU class."""
@@ -21,7 +23,7 @@ class CPU:
         self.reg = [0] * 8
         self.pc = 0
         self.halted = False
-        self.reg[SP] = 0xf4
+        self.reg[SP] = 0XF4
 
     def load(self):
         """Load a program into memory."""
@@ -70,6 +72,8 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -99,7 +103,8 @@ class CPU:
         return self.ram[read_address]
 
     def ram_write(self, value, write_address):
-        self.ram.insert(write_address, value)
+        self.ram[write_address] = value
+        # self.ram.insert(write_address, value)
 
     def run(self):
         """Run the CPU."""
@@ -123,26 +128,29 @@ class CPU:
                 self.reg[operand_a] = operand_b
                 inc_size = 3
 
+            elif cmd == ADD:
+                self.alu("ADD", operand_a, operand_b)
+                inc_size = 3
+
             elif cmd == MUL:
-                mul = self.reg[operand_a] * self.reg[operand_b]
-                print(mul)
-                inc_size = 2
+                self.alu("MUL", operand_a, operand_b)
+                inc_size = 3
+                # mul = self.reg[operand_a] * self.reg[operand_b]
+                # print(mul)
 
             elif cmd == PUSH:
-                reg_index = self.ram_read(self.pc + 1)
-                value = self.reg[reg_index]
+                # reg_index = self.ram_read(self.pc + 1) # operand_a defined already
+                value = self.reg[operand_a]
                 # PUSH
                 self.reg[SP] -= 1
-                # self.ram[self.reg[SP]] = value
                 self.ram_write(value, self.reg[SP])
                 inc_size = 2
 
             elif cmd == POP:
-                reg_index = self.ram_read(self.pc + 1)
-                value = self.ram[self.reg[SP]]
+                value = self.ram_read(self.reg[SP])
                 # POP
-                self.reg[reg_index] = value
                 self.reg[SP] += 1
+                self.reg[operand_a] = value
                 inc_size = 2
 
             self.pc += inc_size 
