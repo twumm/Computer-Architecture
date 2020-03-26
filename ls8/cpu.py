@@ -12,6 +12,8 @@ ADD = 0b10100000
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
 
 
 class CPU:
@@ -24,6 +26,7 @@ class CPU:
         self.pc = 0
         self.halted = False
         self.reg[SP] = 0XF4
+        self.op_pc = False
 
     def load(self):
         """Load a program into memory."""
@@ -123,18 +126,22 @@ class CPU:
                 num = self.reg[reg_index]
                 print(num)
                 inc_size = 2
+                self.op_pc = False
             
             elif cmd == LDI:
                 self.reg[operand_a] = operand_b
                 inc_size = 3
+                self.op_pc = False
 
             elif cmd == ADD:
                 self.alu("ADD", operand_a, operand_b)
                 inc_size = 3
+                self.op_pc = False
 
             elif cmd == MUL:
                 self.alu("MUL", operand_a, operand_b)
                 inc_size = 3
+                self.op_pc = False
                 # mul = self.reg[operand_a] * self.reg[operand_b]
                 # print(mul)
 
@@ -145,6 +152,7 @@ class CPU:
                 self.reg[SP] -= 1
                 self.ram_write(value, self.reg[SP])
                 inc_size = 2
+                self.op_pc = False
 
             elif cmd == POP:
                 value = self.ram_read(self.reg[SP])
@@ -152,8 +160,27 @@ class CPU:
                 self.reg[SP] += 1
                 self.reg[operand_a] = value
                 inc_size = 2
+                self.op_pc = False
+            
+            elif cmd == CALL:
+                self.reg[SP] -= 1
+                self.ram_write(self.pc + 2, self.reg[SP])
+                # self.ram_write(operand_b, self.reg[SP])
 
-            self.pc += inc_size 
+                self.pc = self.reg[operand_a]
+                self.op_pc = True
+
+            elif cmd == RET:
+                self.pc = self.ram[self.reg[SP]]
+                self.reg[SP] += 1
+                self.op_pc = True
+            
+            # else:
+            #     print(f"Invalid Instruction: {cmd}")
+            #     self.halted = False
+
+            if not self.op_pc:
+                self.pc += inc_size 
 
 # small_cpu = CPU()
 # small_cpu.load()
