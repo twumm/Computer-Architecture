@@ -2,31 +2,70 @@
 
 import sys
 
+SP = 7
+
+# operation codes
+HLT = 0b00000001
+PRN = 0b01000111
+LDI = 0b10000010
+ADD = 0b10100000
+MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
+
+
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.ram = [0] * 256
+        self.reg = [0] * 8
+        self.pc = 0
+        self.halted = False
+        self.reg[SP] = 0XF4
+        self.op_pc = False
 
     def load(self):
         """Load a program into memory."""
 
+        if len(sys.argv) != 2:
+            print("Please enter: ls8.py [filename]")
+            sys.exit(1)
+        
         address = 0
+        programs = []
+        try:
+            filename = sys.argv[1]
+        except:
+            print('Please add an ls8 file path')
 
+        with open(filename) as f:
+            for line in f:
+                line = line.split('#')[0]
+                line = line.strip()
+
+                if line == '':
+                    continue
+
+                # val = int(line)
+                # print(line)
+                programs.append(int(line, 2))
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
-
-        for instruction in program:
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010, # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111, # PRN R0
+        #     0b00000000,
+        #     0b00000001, # HLT
+        # ]
+        # print(programs)
+        for instruction in programs:
             self.ram[address] = instruction
             address += 1
 
@@ -36,6 +75,8 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -59,7 +100,87 @@ class CPU:
             print(" %02X" % self.reg[i], end='')
 
         print()
+    
+    def ram_read(self, read_address):
+        """Accept the address to read and return the value stored there"""
+        return self.ram[read_address]
+
+    def ram_write(self, value, write_address):
+        self.ram[write_address] = value
+        # self.ram.insert(write_address, value)
 
     def run(self):
         """Run the CPU."""
-        pass
+        inc_size = 0
+        while not self.halted:
+            cmd = self.ram_read(self.pc)
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+
+            if cmd == HLT:
+                self.halted = True
+                sys.exit(-1)
+
+            elif cmd == PRN:
+                reg_index = operand_a
+                num = self.reg[reg_index]
+                print(num)
+                inc_size = 2
+                self.op_pc = False
+            
+            elif cmd == LDI:
+                self.reg[operand_a] = operand_b
+                inc_size = 3
+                self.op_pc = False
+
+            elif cmd == ADD:
+                self.alu("ADD", operand_a, operand_b)
+                inc_size = 3
+                self.op_pc = False
+
+            elif cmd == MUL:
+                self.alu("MUL", operand_a, operand_b)
+                inc_size = 3
+                self.op_pc = False
+                # mul = self.reg[operand_a] * self.reg[operand_b]
+                # print(mul)
+
+            elif cmd == PUSH:
+                # reg_index = self.ram_read(self.pc + 1) # operand_a defined already
+                value = self.reg[operand_a]
+                # PUSH
+                self.reg[SP] -= 1
+                self.ram_write(value, self.reg[SP])
+                inc_size = 2
+                self.op_pc = False
+
+            elif cmd == POP:
+                value = self.ram_read(self.reg[SP])
+                # POP
+                self.reg[SP] += 1
+                self.reg[operand_a] = value
+                inc_size = 2
+                self.op_pc = False
+            
+            elif cmd == CALL:
+                self.reg[SP] -= 1
+                self.ram_write(self.pc + 2, self.reg[SP])
+                # self.ram_write(operand_b, self.reg[SP])
+
+                self.pc = self.reg[operand_a]
+                self.op_pc = True
+
+            elif cmd == RET:
+                self.pc = self.ram[self.reg[SP]]
+                self.reg[SP] += 1
+                self.op_pc = True
+            
+            # else:
+            #     print(f"Invalid Instruction: {cmd}")
+            #     self.halted = False
+
+            if not self.op_pc:
+                self.pc += inc_size 
+
+# small_cpu = CPU()
+# small_cpu.load()
